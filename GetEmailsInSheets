@@ -1,0 +1,41 @@
+function processarPedidos() {
+  const threads = GmailApp.search('label:inbox subject:Pedido');
+
+  for (let i = 0; i < threads.length; i++) {
+    const messages = threads[i].getMessages();
+
+    for (let j = 0; j < messages.length; j++) {
+      const message = messages[j];
+
+      if (message.isInInbox() && !message.isRead) { // Assuming your API supports .isRead
+        extract(message);
+      }
+    }
+  }
+}
+
+function extract(message) {
+  const spreadsheetId = '1oj7IUXH9AGvNnVHPqH-6el3B4bOXIRFcim2Q9Vkvo6o';
+  const sheetName = "Email";
+  const ss = SpreadsheetApp.openById(spreadsheetId);
+  const timezone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const sheet = ss.getSheetByName(sheetName);
+  const today = new Date();
+  const dateTime = Utilities.formatDate(message.getDate(), timezone, "dd/MM/yyyy");
+  const subjectText = message.getSubject();
+  const fromSend = message.getFrom();
+  const bodyContent = message.getPlainBody().substring(0, 50);
+
+  try {
+    sheet.appendRow([dateTime, fromSend, subjectText, bodyContent]);
+  } catch (error) {
+    console.error("Error appending row:", error);
+  }
+}
+
+function onOpen(e) {
+  SpreadsheetApp.getUi()
+    .createMenu('Processar Pedidos') // Choose the desired menu name
+    .addItem('Processar', 'processarPedidos')
+    .addToUi();
+}
